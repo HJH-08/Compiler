@@ -1,0 +1,13 @@
+OpCode: 1 byte, uniquely identifies the instruction.
+Operands: 1+ bytes, represent data (e.g., registers, constants, memory addresses)
+
+
+Instruction Set
+
+0x01    MOV     Register, Value     Move a value into a register.           0x01 0x01 0x0A
+0x02    ADD     Dest, Src1, Src2    Add two registers, store in Dest.       0x02 0x03 0x01 0x02
+0x04    SUB     Dest, Src1, Src2    Subtract Src2 from Src1.                0x04 0x03 0x01 0x02
+0x05    JZ      Register, Address   Jump to address if register is zero.    0x05 0x01 0x06
+0x06    JMP     Address             Unconditional jump to address.          0x06 0x10
+0x03    PRINT   Register            Print the value in a register.          0x03 0x03
+0xFF    HALT    None                Stop execution.                         0xFF
