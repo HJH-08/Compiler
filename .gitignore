@@ -1,0 +1,10 @@
+# Ignore hidden system files
+.DS_Store
+.vscode/
+parser.dSYM/
+Resources/
+test
+test.cpp
+parser
+assembler
+Makefile
