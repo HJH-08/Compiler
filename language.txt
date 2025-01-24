@@ -1,0 +1,14 @@
+Variable Assignment
+let var_name = value;
+
+Arithmetic
++, -, *, / with precedence
+
+Printing
+print(var_name);
+
+Conditionals
+if (condition) {...} else {...}
+
+Loops
+while (condition) {...}
