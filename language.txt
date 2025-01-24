@@ -12,3 +12,20 @@ if (condition) {...} else {...}
 
 Loops
 while (condition) {...}
+
+
+TOKEN TYPES
+=: ASSIGN
++: PLUS
+-: MINUS
+*: MULTIPLY
+/: DIVIDE
+<: LESS
+>: GREATER
+(: LPAREN
+): RPAREN
+{: LBRACE
+}: RBRACE
+;: SEMICOLON
+KEYWORDS
+IDENTIFIERS (x)

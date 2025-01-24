@@ -8,3 +8,5 @@ test.cpp
 parser
 assembler
 Makefile
+test*
+*.o
