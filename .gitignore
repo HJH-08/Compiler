@@ -10,3 +10,4 @@ assembler
 Makefile
 test*
 *.o
+lexer
