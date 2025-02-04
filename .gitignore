@@ -3,11 +3,9 @@
 .vscode/
 parser.dSYM/
 Resources/
-test
-test.cpp
 parser
 assembler
 Makefile
-test*
+*test*
 *.o
 lexer

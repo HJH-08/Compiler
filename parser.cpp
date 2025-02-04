@@ -1,4 +1,5 @@
 #include "parser.hpp"
+#include <memory>
 #include <iostream>
 
 // Constructor: Initializes parser with tokens
