@@ -12,7 +12,8 @@
 class LLVMCodeGen {
 private:
     llvm::LLVMContext context;    // Stores LLVM global state
-    llvm::Module module;          // Represents the whole program
+    std::unique_ptr<llvm::Module> module;  // ✅ Now it's a smart pointer
+          // Represents the whole program
     llvm::IRBuilder<> builder;    // Helps generate LLVM instructions
 
     std::unordered_map<std::string, llvm::Value*> variables;  // Symbol table
@@ -24,6 +25,13 @@ private:
 
 public:
     LLVMCodeGen();
+    llvm::Module& getModule() {
+        return *module;  // ✅ Dereference to return the actual module
+    }
+    std::unique_ptr<llvm::Module> releaseModule() {
+        return std::move(module);  // ✅ Transfers ownership
+    }
+
     void generateCode(std::unique_ptr<ProgramNode>& ast);
     void printLLVMIR();
 };

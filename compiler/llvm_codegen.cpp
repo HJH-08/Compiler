@@ -2,7 +2,8 @@
 #include <iostream>
 
 LLVMCodeGen::LLVMCodeGen()
-    : module("MyLLVMProgram", context), builder(context) {}
+    : module(std::make_unique<llvm::Module>("MyLLVMProgram", context)),
+      builder(context) {}
 
 void LLVMCodeGen::generateCode(std::unique_ptr<ProgramNode>& ast) {
     std::cout << "Generating LLVM IR..." << std::endl;
@@ -11,7 +12,7 @@ void LLVMCodeGen::generateCode(std::unique_ptr<ProgramNode>& ast) {
     llvm::FunctionType *funcType =
         llvm::FunctionType::get(builder.getInt32Ty(), false);
     llvm::Function *mainFunction =
-        llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", module);
+        llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", module.get());
 
     // Create an entry block
     llvm::BasicBlock *entryBlock = llvm::BasicBlock::Create(context, "entry", mainFunction);
@@ -41,13 +42,12 @@ void LLVMCodeGen::generateVariableAssignment(VariableAssignmentNode* node) {
     variables[node->variableName] = varAlloc; // Store pointer to variable
 }
 
-
 llvm::Value* LLVMCodeGen::generateExpression(ASTNode* node) {
     if (auto* integerNode = dynamic_cast<IntegerNode*>(node)) {
         return llvm::ConstantInt::get(context, llvm::APInt(32, integerNode->value));
     } else if (auto* identifierNode = dynamic_cast<IdentifierNode*>(node)) {
-    llvm::Value* varPtr = variables[identifierNode->name];
-    return builder.CreateLoad(llvm::Type::getInt32Ty(context), varPtr, identifierNode->name);
+        llvm::Value* varPtr = variables[identifierNode->name];
+        return builder.CreateLoad(llvm::Type::getInt32Ty(context), varPtr, identifierNode->name);
     } else if (auto* binaryExpr = dynamic_cast<BinaryExpressionNode*>(node)) {
         llvm::Value* left = generateExpression(binaryExpr->left.get());
         llvm::Value* right = generateExpression(binaryExpr->right.get());
@@ -62,23 +62,49 @@ llvm::Value* LLVMCodeGen::generateExpression(ASTNode* node) {
 void LLVMCodeGen::generatePrintStatement(PrintStatementNode* node) {
     llvm::Value* value = generateExpression(node->expression.get());
 
-    llvm::Function* printfFunc = module.getFunction("printf");
+    // ✅ Declare printf if not already declared
+    llvm::Function* printfFunc = module->getFunction("printf");
     if (!printfFunc) {
-        llvm::FunctionType *printfType = llvm::FunctionType::get(builder.getInt32Ty(), true);
-        printfFunc = llvm::Function::Create(printfType, llvm::Function::ExternalLinkage, "printf", module);
+        llvm::FunctionType *printfType = llvm::FunctionType::get(
+            builder.getInt32Ty(),                                     // Return type: int
+            { llvm::PointerType::get(llvm::Type::getInt8Ty(context), 0) }, // First argument: i8*
+            true                                                     // Variadic
+        );
+        printfFunc = llvm::Function::Create(
+            printfType,
+            llvm::Function::ExternalLinkage,
+            "printf",
+            module.get()
+        );
     }
 
-    llvm::Value* formatStr = builder.CreateGlobalStringPtr("%d\n");
+    // ✅ Global variable for the format string
+    llvm::GlobalVariable* formatStr = new llvm::GlobalVariable(
+        *module,
+        llvm::ArrayType::get(llvm::IntegerType::get(context, 8), 4),  // [4 x i8]
+        true,                                                        // Constant
+        llvm::GlobalValue::PrivateLinkage,                           // Private linkage
+        llvm::ConstantDataArray::getString(context, "%d\n", true),   // c"%d\n\00"
+        ".fmt"                                                       // Name of the global variable
+    );
 
-    // ✅ Ensure only one load happens
+    // ✅ Getting a pointer to the format string
+    llvm::Value* formatPtr = builder.CreateInBoundsGEP(
+        formatStr->getValueType(),   // [4 x i8]
+        formatStr,                   // Base pointer
+        { builder.getInt32(0), builder.getInt32(0) }  // GEP indices (0,0)
+    );
+
+    // ✅ Ensure the value is not a pointer
     if (value->getType()->isPointerTy()) {
         value = builder.CreateLoad(llvm::Type::getInt32Ty(context), value, "printload");
     }
 
-    builder.CreateCall(printfFunc, { formatStr, value });
+    // ✅ Call printf
+    builder.CreateCall(printfFunc, { formatPtr, value });
 }
 
 
 void LLVMCodeGen::printLLVMIR() {
-    module.print(llvm::outs(), nullptr);
+    module->print(llvm::outs(), nullptr);
 }
